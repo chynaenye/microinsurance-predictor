@@ -1,8 +1,6 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 
 # Page configuration
 st.set_page_config(
@@ -27,10 +25,21 @@ st.markdown("""
         border: 2px solid #f44336;
         color: #c62828;
     }
+    .medium-risk {
+        background-color: #fff3e0;
+        border: 2px solid #ff9800;
+        color: #e65100;
+    }
     .low-risk {
         background-color: #e8f5e8;
         border: 2px solid #4caf50;
         color: #2e7d32;
+    }
+    .risk-meter {
+        height: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+        position: relative;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -151,16 +160,24 @@ with col2:
             dropout_percentage = dropout_prob * 100
             
             # Determine outcome and risk level
-            if dropout_percentage >= 50:
+            if dropout_percentage >= 70:
                 outcome = "WILL DROPOUT"
-                risk_level = "HIGH RISK" if dropout_percentage >= 70 else "MEDIUM RISK"
+                risk_level = "HIGH RISK"
                 risk_class = "high-risk"
                 color = "#f44336"
+                bar_color = "red"
+            elif dropout_percentage >= 50:
+                outcome = "WILL DROPOUT"
+                risk_level = "MEDIUM RISK"
+                risk_class = "medium-risk"
+                color = "#ff9800"
+                bar_color = "orange"
             else:
                 outcome = "WILL NOT DROPOUT"
                 risk_level = "LOW RISK"
                 risk_class = "low-risk" 
                 color = "#4caf50"
+                bar_color = "green"
             
             # Display main result
             st.markdown(f"""
@@ -172,33 +189,18 @@ with col2:
             </div>
             """, unsafe_allow_html=True)
             
-            # Risk gauge chart
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = dropout_percentage,
-                title = {'text': "Risk Score"},
-                delta = {'reference': 50, 'position': "top"},
-                gauge = {
-                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                    'bar': {'color': color},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "gray",
-                    'steps': [
-                        {'range': [0, 30], 'color': '#e8f5e8'},
-                        {'range': [30, 50], 'color': '#fff3e0'},
-                        {'range': [50, 70], 'color': '#ffebee'},
-                        {'range': [70, 100], 'color': '#ffcdd2'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 90
-                    }
-                }
-            ))
-            fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-            st.plotly_chart(fig, use_container_width=True)
+            # Simple risk meter using Streamlit progress bar
+            st.markdown("### Risk Level Meter:")
+            progress_value = dropout_percentage / 100
+            st.progress(progress_value)
+            
+            col_left, col_center, col_right = st.columns(3)
+            with col_left:
+                st.markdown("**0%**<br>No Risk", unsafe_allow_html=True)
+            with col_center:
+                st.markdown(f"**{dropout_percentage:.1f}%**<br>Current Risk", unsafe_allow_html=True)
+            with col_right:
+                st.markdown("**100%**<br>Certain Dropout", unsafe_allow_html=True)
             
             # Risk factors identified
             st.markdown("### 🔍 Key Risk Factors:")
